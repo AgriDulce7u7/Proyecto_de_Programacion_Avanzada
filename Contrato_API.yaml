@@ -1,0 +1,632 @@
+openapi: 3.0.3
+info:
+  title: API de Gestión de Trámites Académicos
+  description: >
+    Contrato REST para la gestión de trámites del Programa de Ingeniería de
+    Sistemas y Computación — UQ.
+    Cubre el ciclo de vida completo: registro, clasificación, priorización,
+    asignación, atención y cierre, con historial auditable por solicitud.
+    Máquina de estados: REGISTRADA → CLASIFICADA → EN_ATENCION → ATENDIDA → CERRADA.
+  version: 1.1.0
+
+servers:
+  - url: https://api.ingenieria.universidad.edu.co/v1
+
+tags:
+  - name: Solicitudes
+    description: Ciclo de vida de las solicitudes académicas
+  - name: Historial
+    description: Trazabilidad auditable por solicitud
+
+paths:
+
+  /solicitudes:
+    post:
+      tags: [Solicitudes]
+      summary: Registrar una nueva solicitud (RF-01)
+      description: >
+        Registra una solicitud académica ingresada por un usuario.
+        El estado inicial siempre es REGISTRADA.
+        Requiere rol ESTUDIANTE, DOCENTE o ADMINISTRATIVO.
+      operationId: crearSolicitud
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudCrear'
+      responses:
+        '201':
+          description: Solicitud registrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudDetalle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      tags: [Solicitudes]
+      summary: Listar solicitudes con filtros (RF-07)
+      description: >
+        Consulta solicitudes según criterios opcionales de estado, tipo,
+        prioridad y responsable asignado.
+        Requiere rol ADMINISTRATIVO.
+      operationId: listarSolicitudes
+      parameters:
+        - name: estado
+          in: query
+          description: Filtrar por estado actual de la solicitud
+          schema:
+            $ref: '#/components/schemas/EstadoSolicitud'
+        - name: tipo
+          in: query
+          description: Filtrar por tipo de solicitud
+          schema:
+            $ref: '#/components/schemas/TipoSolicitud'
+        - name: prioridad
+          in: query
+          description: Filtrar por nivel de prioridad
+          schema:
+            $ref: '#/components/schemas/Prioridad'
+        - name: responsableId
+          in: query
+          description: Filtrar por ID del responsable asignado
+          schema:
+            type: string
+            example: "admin-007"
+      responses:
+        '200':
+          description: Lista de solicitudes que coinciden con los filtros
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SolicitudDetalle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /solicitudes/{id}:
+    get:
+      tags: [Solicitudes]
+      summary: Obtener detalle de una solicitud (RF-07)
+      description: >
+        Retorna el detalle completo de una solicitud por su ID.
+        Un ESTUDIANTE solo puede consultar sus propias solicitudes.
+        Un ADMINISTRATIVO puede consultar cualquiera.
+      operationId: obtenerSolicitud
+      parameters:
+        - $ref: '#/components/parameters/SolicitudId'
+      responses:
+        '200':
+          description: Detalle de la solicitud
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudDetalle'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /solicitudes/{id}/clasificar:
+    patch:
+      tags: [Solicitudes]
+      summary: Clasificar y priorizar una solicitud (RF-02, RF-03)
+      description: >
+        Establece el tipo y prioridad de la solicitud con su justificación.
+        Transición de estado: REGISTRADA → CLASIFICADA.
+        Requiere rol ADMINISTRATIVO.
+        Si la solicitud no está en estado REGISTRADA se retorna 422.
+      operationId: clasificarSolicitud
+      parameters:
+        - $ref: '#/components/parameters/SolicitudId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClasificacionInput'
+      responses:
+        '200':
+          description: Solicitud clasificada y priorizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudDetalle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/TransicionInvalida'
+
+  /solicitudes/{id}/asignar-responsable:
+    patch:
+      tags: [Solicitudes]
+      summary: Asignar solicitud a un responsable (RF-05)
+      description: >
+        Asigna la solicitud a un responsable administrativo activo.
+        Transición de estado: CLASIFICADA → EN_ATENCION.
+        La asignación queda registrada en el historial.
+        Requiere rol ADMINISTRATIVO.
+        Si la solicitud no está en estado CLASIFICADA se retorna 422.
+      operationId: asignarResponsable
+      parameters:
+        - $ref: '#/components/parameters/SolicitudId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AsignacionInput'
+      responses:
+        '200':
+          description: Responsable asignado — solicitud en atención
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudDetalle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/TransicionInvalida'
+
+  /solicitudes/{id}/atender:
+    patch:
+      tags: [Solicitudes]
+      summary: Marcar solicitud como atendida (RF-04)
+      description: >
+        El responsable asignado indica que la solicitud fue resuelta.
+        Transición de estado: EN_ATENCION → ATENDIDA.
+        Requiere rol ADMINISTRATIVO o ser el responsable asignado.
+        Si la solicitud no está en estado EN_ATENCION se retorna 422.
+      operationId: atenderSolicitud
+      parameters:
+        - $ref: '#/components/parameters/SolicitudId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AtencionInput'
+      responses:
+        '200':
+          description: Solicitud marcada como atendida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudDetalle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/TransicionInvalida'
+
+  /solicitudes/{id}/cerrar:
+    patch:
+      tags: [Solicitudes]
+      summary: Cerrar una solicitud (RF-08)
+      description: >
+        Cierre definitivo con resolución y observación obligatorias.
+        Transición de estado: ATENDIDA → CERRADA.
+        Una solicitud cerrada no puede ser modificada bajo ninguna circunstancia.
+        Requiere rol ADMINISTRATIVO.
+        Si la solicitud no está en estado ATENDIDA se retorna 422.
+      operationId: cerrarSolicitud
+      parameters:
+        - $ref: '#/components/parameters/SolicitudId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CierreInput'
+      responses:
+        '200':
+          description: Solicitud cerrada definitivamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudDetalle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/TransicionInvalida'
+
+  /solicitudes/{id}/historial:
+    get:
+      tags: [Historial]
+      summary: Consultar historial auditable de una solicitud (RF-06)
+      description: >
+        Retorna cada acción realizada sobre la solicitud: cambios de estado,
+        asignaciones, observaciones y cierres, con fecha, hora y usuario responsable.
+        Un ESTUDIANTE solo puede consultar el historial de sus propias solicitudes.
+      operationId: obtenerHistorial
+      parameters:
+        - $ref: '#/components/parameters/SolicitudId'
+      responses:
+        '200':
+          description: Historial de eventos ordenado cronológicamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoHistorial'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+
+  parameters:
+    SolicitudId:
+      name: id
+      in: path
+      required: true
+      description: Identificador único de la solicitud (Long)
+      schema:
+        type: integer
+        format: int64
+        example: 42
+
+  schemas:
+
+    EstadoSolicitud:
+      type: string
+      description: >
+        Estados posibles de una solicitud. Las transiciones válidas son:
+        REGISTRADA → CLASIFICADA → EN_ATENCION → ATENDIDA → CERRADA.
+        No se permiten retrocesos ni saltos de estado.
+      enum:
+        - REGISTRADA
+        - CLASIFICADA
+        - EN_ATENCION
+        - ATENDIDA
+        - CERRADA
+      example: REGISTRADA
+
+    TipoSolicitud:
+      type: string
+      description: Clasificación del trámite académico según RF-02
+      enum:
+        - REGISTRO_ASIGNATURA
+        - HOMOLOGACION
+        - CANCELACION_ASIGNATURA
+        - SOLICITUD_CUPO
+        - CONSULTA_ACADEMICA
+      example: HOMOLOGACION
+
+    Prioridad:
+      type: string
+      description: Nivel de prioridad asignado según impacto académico (RF-03)
+      enum:
+        - BAJA
+        - MEDIA
+        - ALTA
+      example: ALTA
+
+    CanalOrigen:
+      type: string
+      description: Canal por el cual fue ingresada la solicitud (RF-01)
+      enum:
+        - CSU
+        - CORREO
+        - SAC
+        - TELEFONICO
+        - PRESENCIAL
+      example: CORREO
+
+    ResolucionCierre:
+      type: string
+      description: Resultado final de la solicitud al momento del cierre
+      enum:
+        - APROBADA
+        - RECHAZADA
+        - CANCELADA
+      example: APROBADA
+
+    # ─── SCHEMAS DE ENTRADA ────────────────────────────────────────────
+
+    SolicitudCrear:
+      type: object
+      description: Datos requeridos para registrar una nueva solicitud (RF-01)
+      required:
+        - tipo
+        - descripcion
+        - canal
+        - solicitanteId
+        - solicitanteNombre
+        - solicitanteEmail
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoSolicitud'
+        descripcion:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          example: "Solicitud de homologación de Cálculo Diferencial aprobada en otra institución"
+        canal:
+          $ref: '#/components/schemas/CanalOrigen'
+        solicitanteId:
+          type: string
+          description: Código estudiantil o identificación del solicitante
+          example: "20231234"
+        solicitanteNombre:
+          type: string
+          example: "María Pérez"
+        solicitanteEmail:
+          type: string
+          format: email
+          example: "maria.perez@estudiante.edu.co"
+
+    ClasificacionInput:
+      type: object
+      description: Datos para clasificar y priorizar una solicitud (RF-02, RF-03)
+      required:
+        - tipo
+        - prioridad
+        - justificacionPrioridad
+      properties:
+        tipo:
+          $ref: '#/components/schemas/TipoSolicitud'
+        prioridad:
+          $ref: '#/components/schemas/Prioridad'
+        justificacionPrioridad:
+          type: string
+          description: >
+            Justificación obligatoria de la prioridad asignada (RF-03).
+            Debe explicar el impacto académico que motiva la prioridad.
+          minLength: 10
+          maxLength: 500
+          example: "Bloquea inscripción del siguiente semestre. Fecha límite en 5 días."
+        comentario:
+          type: string
+          maxLength: 1000
+          example: "Verificado con oficina de registro académico."
+
+    AsignacionInput:
+      type: object
+      description: Datos para asignar la solicitud a un responsable activo (RF-05)
+      required:
+        - responsableId
+        - responsableNombre
+      properties:
+        responsableId:
+          type: string
+          description: ID del responsable. Debe estar activo en el sistema.
+          example: "admin-007"
+        responsableNombre:
+          type: string
+          example: "Carlos Rodríguez"
+        comentario:
+          type: string
+          maxLength: 1000
+          example: "Asignado a secretaría académica por alta prioridad."
+
+    AtencionInput:
+      type: object
+      description: Datos para marcar una solicitud como atendida (RF-04)
+      required:
+        - observacion
+      properties:
+        observacion:
+          type: string
+          description: Descripción de las acciones realizadas para atender la solicitud.
+          minLength: 10
+          maxLength: 1000
+          example: "Registro de asignatura completado en el sistema académico BANNER."
+
+    CierreInput:
+      type: object
+      description: Datos para el cierre definitivo de la solicitud (RF-08)
+      required:
+        - resolucion
+        - observacionCierre
+      properties:
+        resolucion:
+          $ref: '#/components/schemas/ResolucionCierre'
+        observacionCierre:
+          type: string
+          description: >
+            Observación de cierre obligatoria (RF-08).
+            Una vez cerrada, la solicitud no podrá ser modificada.
+          minLength: 10
+          maxLength: 2000
+          example: "Homologación aprobada. Materias equivalentes verificadas por comité académico."
+
+    # ─── SCHEMA DE RESPUESTA ───────────────────────────────────────────
+
+    SolicitudDetalle:
+      type: object
+      description: Representación completa del estado actual de una solicitud
+      required:
+        - id
+        - tipo
+        - estado
+        - canal
+        - descripcion
+        - solicitanteId
+        - solicitanteNombre
+        - solicitanteEmail
+        - fechaCreacion
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        tipo:
+          $ref: '#/components/schemas/TipoSolicitud'
+        estado:
+          $ref: '#/components/schemas/EstadoSolicitud'
+        prioridad:
+          $ref: '#/components/schemas/Prioridad'
+        justificacionPrioridad:
+          type: string
+          example: "Bloquea inscripción del siguiente semestre."
+        canal:
+          $ref: '#/components/schemas/CanalOrigen'
+        descripcion:
+          type: string
+        solicitanteId:
+          type: string
+        solicitanteNombre:
+          type: string
+        solicitanteEmail:
+          type: string
+          format: email
+        responsableId:
+          type: string
+          description: Presente solo cuando estado es EN_ATENCION, ATENDIDA o CERRADA
+        responsableNombre:
+          type: string
+        resolucion:
+          $ref: '#/components/schemas/ResolucionCierre'
+        observacionCierre:
+          type: string
+          description: Presente solo cuando estado es CERRADA
+        fechaCreacion:
+          type: string
+          format: date-time
+          example: "2025-03-15T10:30:00Z"
+        fechaActualizacion:
+          type: string
+          format: date-time
+        fechaCierre:
+          type: string
+          format: date-time
+          description: Presente solo cuando estado es CERRADA
+
+    EventoHistorial:
+      type: object
+      description: Registro inmutable de una acción realizada sobre una solicitud (RF-06)
+      required:
+        - id
+        - solicitudId
+        - accion
+        - usuarioId
+        - usuarioNombre
+        - fechaHora
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        solicitudId:
+          type: integer
+          format: int64
+          example: 42
+        accion:
+          type: string
+          description: Tipo de acción registrada en el historial
+          enum:
+            - REGISTRO
+            - CLASIFICACION
+            - ASIGNACION_RESPONSABLE
+            - MARCADA_ATENDIDA
+            - CIERRE
+          example: ASIGNACION_RESPONSABLE
+        estadoAnterior:
+          $ref: '#/components/schemas/EstadoSolicitud'
+        estadoNuevo:
+          $ref: '#/components/schemas/EstadoSolicitud'
+        usuarioId:
+          type: string
+          example: "admin-007"
+        usuarioNombre:
+          type: string
+          example: "Carlos Rodríguez"
+        observaciones:
+          type: string
+          example: "Asignado por alta prioridad. Fecha límite próxima."
+        fechaHora:
+          type: string
+          format: date-time
+          example: "2025-03-15T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      required: [status, error, mensaje, timestamp]
+      properties:
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "Bad Request"
+        mensaje:
+          type: string
+          example: "El campo 'tipo' es requerido"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-03-15T10:30:00Z"
+
+  responses:
+    BadRequest:
+      description: Parámetros o cuerpo con errores de validación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 400
+            error: "Bad Request"
+            mensaje: "El campo 'canal' es requerido"
+            timestamp: "2025-03-15T10:30:00Z"
+
+    Forbidden:
+      description: Sin permisos para realizar esta operación
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 403
+            error: "Forbidden"
+            mensaje: "No tiene permisos para realizar esta operación"
+            timestamp: "2025-03-15T10:30:00Z"
+
+    NotFound:
+      description: Solicitud no encontrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 404
+            error: "Not Found"
+            mensaje: "No se encontró la solicitud con ID: 42"
+            timestamp: "2025-03-15T10:30:00Z"
+
+    TransicionInvalida:
+      description: La transición de estado solicitada no es válida según la máquina de estados
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 422
+            error: "Unprocessable Entity"
+            mensaje: "Transición inválida: no se puede clasificar una solicitud en estado CERRADA"
+            timestamp: "2025-03-15T10:30:00Z"
