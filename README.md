@@ -1,2 +1,2 @@
-# Proyecto-de-Programaci-n-Avanzada
+# Proyecto-de-Programacion-Avanzada
 Sistema triage de solicitudes académicas 
