@@ -1,0 +1,47 @@
+<div class="layout">
+  <nav class="navbar">
+    <span class="brand">🎓 Triage UQ</span>
+    <span class="user">{{ nombre }}</span>
+    <button class="btn-logout" (click)="logout()">Cerrar sesión</button>
+  </nav>
+  <div class="content">
+    <div class="header-row">
+      <h2>Solicitudes Académicas</h2>
+      <button class="btn-primary" (click)="nueva()">+ Nueva Solicitud</button>
+    </div>
+    <div class="filtros">
+      <select [(ngModel)]="filtroEstado" (change)="cargar()">
+        <option value="">Todos los estados</option>
+        <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+      </select>
+      <select [(ngModel)]="filtroTipo" (change)="cargar()">
+        <option value="">Todos los tipos</option>
+        <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+      </select>
+      <select [(ngModel)]="filtroPrioridad" (change)="cargar()">
+        <option value="">Todas las prioridades</option>
+        <option *ngFor="let p of prioridades" [value]="p">{{ p }}</option>
+      </select>
+      <button class="btn-sec" (click)="limpiarFiltros()">✕ Limpiar</button>
+      <button class="btn-sec" (click)="cargar()">🔄 Actualizar</button>
+    </div>
+    <div class="cargando" *ngIf="cargando">Cargando solicitudes...</div>
+    <div class="vacio" *ngIf="!cargando && solicitudes.length === 0">No hay solicitudes con los filtros seleccionados.</div>
+    <table *ngIf="!cargando && solicitudes.length > 0">
+      <thead>
+        <tr><th>#</th><th>Tipo</th><th>Estado</th><th>Prioridad</th><th>Solicitante</th><th>Fecha</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of solicitudes">
+          <td>{{ s.id }}</td>
+          <td class="tipo-cell">{{ s.tipo.replace('_',' ') }}</td>
+          <td><span class="badge" [style.background]="badgeColor(s.estado)">{{ s.estado }}</span></td>
+          <td><span class="prioridad" *ngIf="s.prioridad" [style.color]="prioridadColor(s.prioridad)">● {{ s.prioridad }}</span><span *ngIf="!s.prioridad" class="na">—</span></td>
+          <td>{{ s.solicitanteNombre }}</td>
+          <td>{{ s.fechaCreacion | date:'dd/MM/yy HH:mm' }}</td>
+          <td><button class="btn-ver" (click)="verDetalle(s.id)">Ver →</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

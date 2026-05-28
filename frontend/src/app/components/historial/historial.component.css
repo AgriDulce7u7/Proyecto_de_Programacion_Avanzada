@@ -1,0 +1,19 @@
+.layout { min-height:100vh; background:#f5f7fa; }
+.navbar { background:#1e3a5f; color:white; padding:1rem 2rem; display:flex; align-items:center; gap:1rem; }
+.btn-back { background:transparent; border:1px solid rgba(255,255,255,.5); color:white; padding:.4rem 1rem; border-radius:4px; cursor:pointer; }
+.brand { font-weight:bold; }
+.content { padding:1.5rem; max-width:780px; margin:0 auto; }
+.evento { display:flex; gap:1rem; margin-bottom:1.5rem; }
+.evento-icono { width:40px; height:40px; background:#1e3a5f; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.evento-body { background:white; border-radius:8px; padding:1rem; flex:1; box-shadow:0 2px 6px rgba(0,0,0,.07); }
+.evento-header { display:flex; justify-content:space-between; margin-bottom:.5rem; }
+.evento-header strong { color:#1e3a5f; }
+.fecha { font-size:.78rem; color:#888; }
+.transicion { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
+.estado { padding:.2rem .6rem; border-radius:12px; font-size:.78rem; font-weight:600; }
+.from { background:#e9ecef; color:#555; }
+.to   { background:#d1e7dd; color:#0f5132; }
+.flecha { color:#aaa; }
+.usuario { font-size:.82rem; color:#666; margin:.3rem 0; }
+.obs { background:#f8f9fa; padding:.6rem; border-radius:4px; font-size:.88rem; margin:0; }
+.cargando,.vacio { text-align:center; padding:3rem; color:#666; }

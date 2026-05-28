@@ -1,0 +1,72 @@
+<div class="layout">
+  <nav class="navbar">
+    <button class="btn-back" (click)="volver()">← Volver</button>
+    <span class="brand">Nueva Solicitud Académica</span>
+  </nav>
+  <div class="content">
+    <div class="alerta error" *ngIf="error">❌ {{ error }}</div>
+    <div class="card">
+      <h3>Datos del solicitante</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" [(ngModel)]="form.solicitanteNombre" placeholder="Juan García" />
+        </div>
+        <div class="form-group">
+          <label>Código / Identificación *</label>
+          <input type="text" [(ngModel)]="form.solicitanteId" placeholder="20231234" />
+        </div>
+        <div class="form-group">
+          <label>Email institucional *</label>
+          <input type="email" [(ngModel)]="form.solicitanteEmail" placeholder="juan@estudiante.edu.co" />
+        </div>
+        <div class="form-group">
+          <label>Canal de ingreso *</label>
+          <select [(ngModel)]="form.canal">
+            <option value="">Seleccionar...</option>
+            <option *ngFor="let c of canales" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Detalle del trámite</h3>
+      <div class="form-group">
+        <label>Descripción * (mín. 10 caracteres)</label>
+        <textarea [(ngModel)]="form.descripcion" rows="4"
+          placeholder="Describa detalladamente su solicitud académica..."
+          (blur)="sugerirTipo()"></textarea>
+        <small style="color:#888">Al salir del campo, la IA sugerirá el tipo automáticamente (RF-10).</small>
+      </div>
+
+      <div class="sugerencia" *ngIf="sugerencia">
+        🤖 <strong>IA sugiere:</strong> {{ sugerencia.tipoSugerido }} — {{ sugerencia.justificacion }}
+        <br><small>{{ sugerencia.advertencia }}</small>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo de solicitud *</label>
+          <select [(ngModel)]="form.tipo">
+            <option value="">Seleccionar...</option>
+            <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha límite (opcional — mejora priorización automática)</label>
+          <input type="datetime-local" [(ngModel)]="form.fechaLimite" />
+        </div>
+      </div>
+
+      <div class="form-group" style="display:flex;align-items:center;gap:.8rem">
+        <input type="checkbox" [(ngModel)]="form.impactoGrado" id="impacto" style="width:auto" />
+        <label for="impacto" style="text-transform:none;font-size:.95rem;color:#333">¿Esta solicitud tiene impacto en grado?</label>
+      </div>
+
+      <button class="btn-accion" (click)="registrar()" [disabled]="cargando">
+        {{ cargando ? 'Registrando...' : 'Registrar solicitud' }}
+      </button>
+    </div>
+  </div>
+</div>

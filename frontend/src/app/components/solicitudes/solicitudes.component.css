@@ -1,0 +1,32 @@
+.layout { min-height:100vh; background:#f5f7fa; }
+.navbar { background:#1e3a5f; color:white; padding:1rem 2rem; display:flex; align-items:center; gap:1rem; }
+.btn-back { background:transparent; border:1px solid rgba(255,255,255,.5); color:white; padding:.4rem 1rem; border-radius:4px; cursor:pointer; }
+.brand { font-weight:bold; }
+.content { padding:1.5rem; max-width:900px; margin:0 auto; }
+.card { background:white; border-radius:10px; padding:1.5rem; margin-bottom:1.2rem; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+.card-header h3 { margin:0; color:#1e3a5f; }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+label { font-size:.78rem; color:#888; text-transform:uppercase; font-weight:600; display:block; margin-bottom:.2rem; }
+p { margin:0 0 .5rem; color:#333; }
+.desc { background:#f8f9fa; padding:.8rem; border-radius:6px; border-left:3px solid #2e75b6; }
+.regla { background:#f0f4ff; padding:.8rem; border-radius:6px; border-left:3px solid #6f42c1; font-size:.88rem; color:#444; }
+.hint { color:#666; font-size:.85rem; background:#f8f9fa; padding:.6rem; border-radius:4px; margin-bottom:1rem; }
+.badge { padding:.3rem .8rem; border-radius:20px; font-size:.78rem; font-weight:600; color:white; }
+.b-REGISTRADA{background:#6c757d}.b-CLASIFICADA{background:#0d6efd}.b-EN_ATENCION{background:#fd7e14}.b-ATENDIDA{background:#198754}.b-CERRADA{background:#343a40}
+.alerta-inline { color:#dc3545; font-weight:600; font-size:.85rem; }
+.ia-card { border-left:4px solid #6f42c1; }
+.btn-ia { background:#6f42c1; color:white; border:none; padding:.5rem 1rem; border-radius:6px; cursor:pointer; margin-bottom:1rem; font-size:.88rem; }
+.resumen-ia { background:#f3f0ff; padding:1rem; border-radius:6px; margin-top:.5rem; }
+.sugerencia { background:#fff3cd; padding:.8rem; border-radius:6px; margin-bottom:1rem; font-size:.85rem; }
+.accion-card { border-left:4px solid #2e75b6; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.form-group { margin-bottom:1rem; }
+.form-group input,.form-group select,.form-group textarea { width:100%; padding:.6rem; border:1px solid #ddd; border-radius:6px; font-size:.95rem; box-sizing:border-box; }
+.btn-accion { background:#1e3a5f; color:white; border:none; padding:.7rem 1.5rem; border-radius:6px; cursor:pointer; font-size:.9rem; }
+.btn-accion.verde { background:#198754; }
+.btn-accion.rojo  { background:#dc3545; }
+.btn-historial { display:block; width:100%; background:#e9ecef; color:#333; border:none; padding:.8rem; border-radius:8px; cursor:pointer; margin-bottom:1.5rem; font-size:.9rem; }
+.alerta { padding:.8rem 1rem; border-radius:6px; margin-bottom:1rem; font-size:.9rem; }
+.alerta.ok    { background:#d1e7dd; color:#0f5132; }
+.alerta.error { background:#f8d7da; color:#842029; }

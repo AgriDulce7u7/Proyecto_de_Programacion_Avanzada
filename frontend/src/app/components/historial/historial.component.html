@@ -1,0 +1,28 @@
+<div class="layout">
+  <nav class="navbar">
+    <button class="btn-back" (click)="volver()">← Volver</button>
+    <span class="brand">Historial — Solicitud #{{ solicitudId }}</span>
+  </nav>
+  <div class="content">
+    <div class="cargando" *ngIf="cargando">Cargando historial...</div>
+    <div class="timeline" *ngIf="!cargando">
+      <div class="evento" *ngFor="let e of historial">
+        <div class="evento-icono">{{ icono(e.accion) }}</div>
+        <div class="evento-body">
+          <div class="evento-header">
+            <strong>{{ e.accion }}</strong>
+            <span class="fecha">{{ e.fechaHora | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+          </div>
+          <div class="transicion" *ngIf="e.estadoAnterior">
+            <span class="estado from">{{ e.estadoAnterior }}</span>
+            <span class="flecha">→</span>
+            <span class="estado to">{{ e.estadoNuevo }}</span>
+          </div>
+          <p class="usuario">👤 {{ e.usuarioNombre }}</p>
+          <p class="obs" *ngIf="e.observaciones">{{ e.observaciones }}</p>
+        </div>
+      </div>
+      <div class="vacio" *ngIf="historial.length === 0">No hay eventos registrados.</div>
+    </div>
+  </div>
+</div>

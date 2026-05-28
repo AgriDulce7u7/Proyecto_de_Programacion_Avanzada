@@ -1,0 +1,25 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="logo">
+      <h1>🎓 Triage UQ</h1>
+      <p>Sistema de Gestión de Solicitudes Académicas</p>
+      <p class="sub">Programación Avanzada — Universidad del Quindío</p>
+    </div>
+    <form (ngSubmit)="login()">
+      <div class="form-group">
+        <label>Correo institucional</label>
+        <input type="email" [(ngModel)]="correo" name="correo"
+               placeholder="usuario@uq.edu.co" required />
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" [(ngModel)]="password" name="password"
+               placeholder="••••••••" required />
+      </div>
+      <div class="error" *ngIf="error">{{ error }}</div>
+      <button type="submit" [disabled]="cargando">
+        {{ cargando ? 'Ingresando...' : 'Ingresar al sistema' }}
+      </button>
+    </form>
+  </div>
+</div>
